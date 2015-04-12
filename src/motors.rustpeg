@@ -1,0 +1,33 @@
+use super::Data;
+use super::Data::*;
+
+#[pub]
+template -> Vec<Data>
+  = lns:line ++ "\n" {
+      let mut out = Vec::new();
+      for l in lns.iter() {
+          out.push_all(l);
+      }
+      out
+    }
+
+line -> Vec<Data>
+  = (variable / plain)*
+
+variable -> Data
+  = "{{" space*
+    ident:identifier
+    space* "}}" {
+      Variable(ident.to_string())
+    }
+
+identifier -> String
+  = [a-zA-z]+ { match_str.to_string() }
+
+space
+  = " " / "\t" / "\v"
+
+plain -> Data
+  = ([^{]+ / ( "{" [^}]+ ) ) {
+      Text(match_str.to_string())
+    }

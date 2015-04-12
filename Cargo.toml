@@ -1,0 +1,21 @@
+[package]
+name = "motors"
+version = "0.1.0"
+authors = ["Jan-Erik Rediger <janerik@fnordig.de>"]
+
+keywords = ["template"]
+description = "A super small template library, inspired by Mote"
+
+readme = "README.md"
+license = "MIT"
+
+documentation = "http://badboy.github.io/motors/doc/motors/"
+repository = "https://github.com/badboy/motors"
+
+[lib]
+name = "motors"
+# https://github.com/rust-lang/cargo/issues/1512
+doctest = false
+
+[dependencies]
+peg = "*"
