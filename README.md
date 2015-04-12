@@ -25,5 +25,5 @@ If you find bugs or want to help otherwise, please [open an issue][issues].
 
 MIT. See [LICENSE](LICENSE).
 
-[doc]: http://badboy.github.io/motors/doc/motors/
+[doc]: http://badboy.github.io/motors/motors/
 [issues]: https://github.com/badboy/motors/issues
