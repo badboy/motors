@@ -15,7 +15,7 @@ repository = "https://github.com/badboy/motors"
 [lib]
 name = "motors"
 # https://github.com/rust-lang/cargo/issues/1512
-doctest = false
+#doctest = false
 
-[dependencies]
-peg = "*"
+[dependencies.peg]
+git = "https://github.com/kevinmehall/rust-peg"
