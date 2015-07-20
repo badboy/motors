@@ -7,6 +7,7 @@
 //!
 //! ```rust
 //! use motors;
+//! use std::collections::HashMap;
 //! let tmpl = motors::Template::parse("Hello {{user}}!").unwrap();
 //! let mut ctx = HashMap::new();
 //!
@@ -14,7 +15,7 @@
 //! assert_eq!("Hello Ada!", tmpl.render(&ctx));
 //! ```
 
-#![feature(plugin,str_char,collections)]
+#![feature(plugin,vec_push_all)]
 #![plugin(peg_syntax_ext)]
 
 use std::collections::HashMap;
@@ -24,6 +25,8 @@ use Data::*;
 pub enum Data {
     Variable(String),
     Text(String),
+    Condition(String, Vec<Data>, Option<Vec<Data>>),
+    Comment(String),
 }
 
 peg_file! motors("motors.rustpeg");
@@ -44,16 +47,36 @@ impl Template {
         let mut out = String::new();
 
         for elem in &self.data {
-            match *elem {
-                Text(ref t) => out = out + &t,
-                Variable(ref v) => {
-                    if let Some(val) = context.get(&v[..]) {
-                        out = out + val;
-                    }
-                }
-            };
+            self.render_elem(&mut out, elem, context);
         }
         out
+    }
+
+    fn render_elem(&self, out: &mut String, elem: &Data, context: &HashMap<&str,&str>) {
+        match *elem {
+            Text(ref t) => out.push_str(&t),
+            Variable(ref v) => {
+                if let Some(val) = context.get(&v[..]) {
+                    out.push_str(val);
+                }
+            },
+            Condition(ref v, ref left, ref right) => {
+                if let Some(_) = context.get(&v[..]) {
+                    for el in left {
+                        self.render_elem(out, el, context);
+                    }
+                    out.push_str("\n");
+                } else {
+                    if let Some(ref right_v) = *right {
+                        for el in right_v {
+                            self.render_elem(out, el, context);
+                        }
+                        out.push_str("\n");
+                    }
+                }
+            }
+            _ => (),
+        };
     }
 
     pub fn motors(input: &str, context: &HashMap<&str,&str>) -> Result<String,motors::ParseError> {
@@ -96,4 +119,37 @@ fn shortcut_works() {
 
     assert_eq!("Hello Ada!",
                Template::motors("Hello {{user}}!", &ctx).unwrap());
+}
+
+#[test]
+fn parses_code_comment_line() {
+    let tmpl = Template::parse("% # comment");
+    assert!(tmpl.is_ok());
+}
+
+#[test]
+fn parses_code_line() {
+    let s = r#"
+% if user
+ Hi {{user}}
+% else
+ this is the else branch
+% end
+
+% if userx
+if teil
+% end
+stop
+
+% if userx
+if part 2
+% else
+else part 2
+% end
+"#;
+
+    let tmpl = Template::parse(s).unwrap();
+    let mut ctx = HashMap::new();
+    ctx.insert("user", "Ada");
+    assert_eq!(" Hi Ada\nstopelse part 2\n", tmpl.render(&ctx));
 }

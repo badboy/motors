@@ -3,7 +3,7 @@ use super::Data::*;
 
 #[pub]
 template -> Vec<Data>
-  = lns:line ++ "\n" {
+  = "\n"* lns:line ** "\n" {
       let mut out = Vec::new();
       for l in lns.iter() {
           out.push_all(l);
@@ -12,7 +12,33 @@ template -> Vec<Data>
     }
 
 line -> Vec<Data>
-  = (variable / plain)*
+  = (code / variable / plain)*
+
+code -> Data
+  = "%" space* s:(simple_condition / comment) { s }
+
+simple_condition -> Data
+  = s:condition { let (t,c,e) = s; Condition(t,c,e) }
+
+comment -> Data
+  = "#" [^\n]+ { Comment(match_str.to_string()) }
+
+condition -> (String, Vec<Data>, Option<Vec<Data>>)
+  = s:if "\n" c:line "\n%" e:(else)? space* end {
+      (s, c, e)
+  }
+
+if -> String
+  = "if" space+ s:statement { s }
+
+else -> Vec<Data>
+  = space* "else" space* "\n" c:line "\n%" { c }
+
+end  -> String
+  = "end" space* { "end".to_string() }
+
+statement -> String
+  = (!"\n" .)+ { match_str.to_string() }
 
 variable -> Data
   = "{{" space*
@@ -28,6 +54,6 @@ space
   = " " / "\t" / "\v"
 
 plain -> Data
-  = ([^{]+ / ( "{" [^}]+ ) ) {
+  = ![%] ([^{\n]+ / ( "{" [^}\n]+ ) ) {
       Text(match_str.to_string())
     }
